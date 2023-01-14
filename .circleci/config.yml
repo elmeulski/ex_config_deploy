@@ -84,6 +84,9 @@ workflows:
     #  - configure_infrastructure
     #  - smoke_test
       - create_infrastructure
-      - smoke_test_create_infra
+      - smoke_test_create_infra:
+          requires: 
+            - create_infrastructure
+
 
 # VS Code Extension Version: 1.5.1
