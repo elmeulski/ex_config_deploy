@@ -55,10 +55,12 @@ jobs:
               return 1
                 fi
 
+  # Exercise: Rollback
   create_infrastructure: 
     docker:
       - image: amazon/aws-cli
     steps:
+      - checkout
       - run: 
           name: Create Cloudformation Stack
           command: |
