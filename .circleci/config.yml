@@ -76,7 +76,68 @@ jobs:
       - run: 
           name: A job to fail # Job that intentionally fails to simulate error
           command: return 1
-      - destroy_environment
+     # - destroy_environment
+
+  # Exercise: Promote to production 
+  create_and_deploy_front_end: 
+    docker: 
+      - image: amazon/aws-cli
+    steps: 
+      - checkout
+      - run: 
+          name: Executing cloudformation-bucket-template.yml - Create CloudFormation stack 
+          command: |
+            aws cloudformation deploy \
+            --template-file cloudformation-bucket-template.yml
+            --stack-name stack-create-bucket-${CIRCLE_WORKFLOW_ID:0:7} \
+            --parameter-overrides MyBucketName="mybucket-${CIRCLE_WORKFLOW_ID:0:7}"
+            - run: aws s3 sync . s3//mybucket-${CIRCLE_WORKFLOW_ID_0:7} --delete
+
+
+  get_last_deployment_id: 
+    docker:
+      - image: amazon/aws-cli
+    steps: 
+      - checkout
+      - run: yum install -y tar gzip
+      - run: 
+          name: Fetch and save the old pipeline ID (bucket name) resposible for the last release. 
+          command: |
+            aws cloudformation \
+            list-exports --query "Exports[?Name==\'PipelineID\'].Value" \
+            --no-paginate --output text > ~/textfile.txt
+      - persist_to_workspace:
+          root: ~/
+          paths: 
+            - textfile.txt
+
+  promote_to_production:
+    docker: 
+      - image: amazon/aws-cli
+    steps: 
+      - checkout
+      - run: 
+          name: Execute cloudformation-cloudfront-template.yml
+          command: |
+            aws cloudformation deploy  
+            aws cloudformation deploy \
+            --template-file cloudformation-cloudfront-template.yml \
+            --stack-name production-distro \
+            --parameter-overrides PipelineID="mybucket-${CIRCLE_WORKSFLOW_ID:0:7}"
+  
+  clear_up_old_front_end:
+    docker: 
+      - image: amazon/aws-cli
+    steps: 
+      - checkout
+      - run: yum install -y tar gzip
+      - attach_workspace:
+          at: ~/
+      - run: 
+          name: Destroy the previous S3 bucket and CloudFormation stack. 
+          command: |
+            export OldBucketId=$(cat ~/textfile.txt)
+            aws s3 rm "s3://${OldBucketID}" --recursive
           
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
@@ -85,10 +146,18 @@ workflows:
     jobs:
     #  - configure_infrastructure
     #  - smoke_test
-      - create_infrastructure
-      - smoke_test_create_infra:
+    #  - create_infrastructure
+    #  - smoke_test_create_infra:
+    #      requires: 
+    #        - create_infrastructure
+      - create_and_deploy_front_end
+      - promote_to_production:
           requires: 
-            - create_infrastructure
-
+            - create_and_deploy_front_end
+      - get_last_deployment_id
+      - clear_up_old_front_end: 
+          requires: 
+            - promote_to_production
+            - get_last_deployment_id
           
 # VS Code Extension Version: 1.5.1
