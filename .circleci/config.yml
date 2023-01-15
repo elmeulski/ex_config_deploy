@@ -58,7 +58,7 @@ jobs:
   # Exercise: Rollback
   create_infrastructure: 
     docker:
-      - image: amazon/aws-cli
+      - image: amazon/aws-cli-rc-alpine
     steps:
       - checkout
       - run: 
