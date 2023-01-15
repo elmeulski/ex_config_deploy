@@ -118,7 +118,6 @@ jobs:
       - run: 
           name: Execute cloudformation-cloudfront-template.yml
           command: |
-            aws cloudformation deploy  
             aws cloudformation deploy \
             --template-file cloudformation-cloudfront-template.yml \
             --stack-name production-distro \
