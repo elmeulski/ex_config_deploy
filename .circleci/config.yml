@@ -58,7 +58,7 @@ jobs:
   # Exercise: Rollback
   create_infrastructure: 
     docker:
-      - image: amazon/aws-cli-rc-alpine
+      - image: amazon/aws-cli
     steps:
       - checkout
       - run: 
@@ -71,7 +71,7 @@ jobs:
 
   smoke_test_create_infra:
     docker:
-      - image: alpine:latest
+      - image: amazon/aws-cli
     steps:
       - run: 
           name: A job to fail # Job that intentionally fails to simulate error
