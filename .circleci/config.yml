@@ -71,7 +71,7 @@ jobs:
 
   smoke_test_create_infra:
     docker:
-      - image: amazon/aws-cli
+      - image: alpine:latest
     steps:
       - run: 
           name: A job to fail # Job that intentionally fails to simulate error
